@@ -76,7 +76,7 @@ export default function Assistente() {
         <div className="assistente-topo">
           <div className="assistente-avatar">IA</div>
           <div>
-            <strong>Assistente Logis</strong>
+            <strong>Assistente Controle de Estoque | Projeto - Startup</strong>
             <p className="muted pequeno">Especialista em gerenciamento de estoque</p>
           </div>
         </div>
@@ -88,7 +88,7 @@ export default function Assistente() {
               className={`mensagem ${mensagem.tipo}`}
             >
               <div className="mensagem-autor">
-                {mensagem.tipo === 'usuario' ? 'Você' : 'Assistente Logis'}
+                {mensagem.tipo === 'usuario' ? 'Você' : 'Assistente Controle de Estoque | Projeto - Startup'}
               </div>
               <div className="mensagem-texto">{mensagem.texto}</div>
             </div>
@@ -96,7 +96,7 @@ export default function Assistente() {
 
           {carregando && (
             <div className="mensagem ia">
-              <div className="mensagem-autor">Assistente Logis</div>
+              <div className="mensagem-autor">Assistente Controle de Estoque | Projeto - Startup</div>
               <div className="mensagem-texto">Analisando os dados do estoque...</div>
             </div>
           )}

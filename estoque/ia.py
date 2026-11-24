@@ -12,7 +12,7 @@ def perguntar_ao_gemini(pergunta, contexto):
     cliente = genai.Client(api_key=chave)
 
     instrucao = f"""
-Você é o assistente inteligente do sistema Logis, especializado
+Você é o assistente inteligente do sistema Controle de Estoque | Projeto - Startups, especializado
 em controle e gerenciamento de estoque.
 
 REGRAS:
