@@ -31,3 +31,6 @@ websockets==17.4
 
 gunicorn
 whitenoise
+
+dj-database-url
+psycopg[binary]
