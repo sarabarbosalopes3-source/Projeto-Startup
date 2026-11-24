@@ -13,7 +13,7 @@ export default function Assistente() {
   const [mensagens, setMensagens] = useState([
     {
       tipo: 'ia',
-      texto: 'Olá! Sou o assistente inteligente do Logis. Posso ajudar você a consultar produtos, analisar o estoque e entender as movimentações. O que deseja saber?',
+      texto: 'Olá! Sou o assistente inteligente do Controle de Estoque | Projeto - Startup. Posso ajudar você a consultar produtos, analisar o estoque e entender as movimentações. O que deseja saber?',
     },
   ])
   const [carregando, setCarregando] = useState(false)
