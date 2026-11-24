@@ -34,7 +34,7 @@ export default function App() {
           <span className="logo-icon">
             <Icon name="logo" size={20} />
           </span>
-          logis
+Controle de Estoque | Projeto - Startup
         </div>
 
         <div className="side-label">PRINCIPAL</div>
@@ -93,7 +93,8 @@ export default function App() {
 
           <div className="topo-direita">
             <span className="centro-tag">
-              <i /> Logis
+              <i /> Controle de Estoque | Projeto - Startup
+
             </span>
           </div>
         </header>
