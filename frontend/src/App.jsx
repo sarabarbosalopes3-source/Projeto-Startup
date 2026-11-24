@@ -93,7 +93,7 @@ Controle de Estoque
 
           <div className="topo-direita">
             <span className="centro-tag">
-              <i /> Controle de Estoque | Projeto - Startup
+              <i /> Controle de Estoque
 
             </span>
           </div>
