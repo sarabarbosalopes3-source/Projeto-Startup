@@ -1,0 +1,27 @@
+# Ambientes virtuais
+venv/
+.venv/
+
+# Arquivos Python
+__pycache__/
+*.py[cod]
+
+# Banco de dados
+db.sqlite3
+
+# Dependências do frontend
+frontend/node_modules/
+
+# Arquivos secretos
+.env
+
+# Outros arquivos sensíveis
+.env.*
+!.env.example
+*.pem
+*.key
+credentials*.json
+service-account*.json
+
+# Arquivos temporários e logs
+*.log
