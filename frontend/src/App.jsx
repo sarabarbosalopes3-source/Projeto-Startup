@@ -34,7 +34,7 @@ export default function App() {
           <span className="logo-icon">
             <Icon name="logo" size={20} />
           </span>
-Controle de Estoque | Projeto - Startup
+Controle de Estoque
         </div>
 
         <div className="side-label">PRINCIPAL</div>
