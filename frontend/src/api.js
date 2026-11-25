@@ -1,7 +1,12 @@
 async function chamar(url, opcoes) {
   const r = await fetch('/api' + url, opcoes)
-  const dados = await r.json()
-  if (!r.ok) throw dados
+  let dados = null
+  try {
+    dados = await r.json()
+  } catch {
+    // resposta não veio em JSON (página de erro do servidor)
+  }
+  if (!r.ok) throw dados || { erro: `Erro ${r.status} do servidor (${r.statusText || 'sem detalhes'}).` }
   return dados
 }
 
