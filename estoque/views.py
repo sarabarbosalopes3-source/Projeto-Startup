@@ -1,7 +1,6 @@
 import json
 
 from django.db.models import F, Sum
-from django.db import transaction
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
@@ -100,3 +99,286 @@ def movimentacoes(request):
             return erros(form)
 
         return JsonResponse(mov_json(form.save()), status=201)
+    
+    lista = Movimentacao.objects.select_related('produto')
+
+    return JsonResponse(
+        [mov_json(m) for m in lista],
+        safe=False
+    )
+
+
+# EXCLUIR PRODUTO (só se não tiver movimentações)
+@csrf_exempt
+def produto_detalhe(request, pk):
+    if request.method != 'DELETE':
+        return JsonResponse({'erro': 'Método não permitido.'}, status=405)
+
+    try:
+        produto = Produto.objects.get(pk=pk)
+    except Produto.DoesNotExist:
+        return JsonResponse({'erro': 'Produto não encontrado.'}, status=404)
+
+    if Movimentacao.objects.filter(produto=produto).exists():
+        return JsonResponse(
+            {'erro': 'Este produto tem movimentações. Exclua as movimentações dele primeiro.'},
+            status=400
+        )
+
+    produto.delete()
+    return JsonResponse({'ok': True})
+
+
+# EXCLUIR MOVIMENTAÇÃO (desfaz o efeito no saldo do produto)
+@csrf_exempt
+def movimentacao_detalhe(request, pk):
+    if request.method != 'DELETE':
+        return JsonResponse({'erro': 'Método não permitido.'}, status=405)
+
+    with transaction.atomic():
+        try:
+            mov = Movimentacao.objects.select_related('produto').get(pk=pk)
+        except Movimentacao.DoesNotExist:
+            return JsonResponse({'erro': 'Movimentação não encontrada.'}, status=404)
+
+        produto = mov.produto
+        novo_saldo = produto.saldo + (
+            -mov.quantidade if mov.tipo == 'entrada' else mov.quantidade
+        )
+
+        if novo_saldo < 0:
+            return JsonResponse(
+                {'erro': f'Não dá pra excluir: o saldo de {produto.nome} ficaria negativo ({novo_saldo}).'},
+                status=400
+            )
+
+        produto.saldo = novo_saldo
+        produto.save()
+        mov.delete()
+
+    return JsonResponse({'ok': True})
+
+
+# FUNÇÃO DO ASSISTENTE DE IA
+@csrf_exempt
+def assistente_ia(request):
+
+    if request.method != 'POST':
+        return JsonResponse(
+            {'erro': 'Método não permitido.'},
+            status=405
+        )
+
+    dados = corpo(request)
+    pergunta = dados.get('pergunta', '').strip()
+
+    if not pergunta:
+        return JsonResponse(
+            {'erro': 'Digite uma pergunta.'},
+            status=400
+        )
+
+    try:
+        # Buscar todos os produtos cadastrados
+        produtos = Produto.objects.all().order_by('nome')
+
+        # Buscar as últimas 10 movimentações
+        movimentacoes_recentes = (
+            Movimentacao.objects
+            .select_related('produto')
+            .order_by('-criada_em')[:10]
+        )
+
+        # Organizar os dados dos produtos
+        lista_produtos = []
+
+        for p in produtos:
+            lista_produtos.append({
+                'nome': p.nome,
+                'sku': p.sku,
+                'saldo': p.saldo,
+                'estoque_minimo': p.estoque_minimo,
+                'situacao': (
+                    'Sem estoque' if p.saldo <= 0
+                    else 'Estoque baixo' if p.baixo
+                    else 'Estoque normal'
+                )
+            })
+
+        # Organizar as movimentações
+        lista_movimentacoes = []
+
+        for m in movimentacoes_recentes:
+            lista_movimentacoes.append({
+                'produto': m.produto.nome,
+                'sku': m.produto.sku,
+                'tipo': m.tipo,
+                'quantidade': m.quantidade,
+                'data': m.criada_em.strftime('%d/%m/%Y %H:%M')
+            })
+
+        # Montar o contexto com informações reais
+        contexto = {
+            'resumo': {
+                'total_produtos': produtos.count(),
+
+                'total_unidades': (
+                    produtos.aggregate(t=Sum('saldo'))['t'] or 0
+                ),
+
+                'produtos_com_estoque_baixo': (
+                    produtos.filter(
+                        saldo__lte=F('estoque_minimo')
+                    ).count()
+                ),
+
+                'total_entradas': Movimentacao.objects.filter(
+                    tipo='entrada'
+                ).count(),
+
+                'total_saidas': Movimentacao.objects.filter(
+                    tipo='saida'
+                ).count()
+            },
+
+            'produtos': lista_produtos,
+
+            'ultimas_movimentacoes': lista_movimentacoes
+        }
+
+        # Transformar os dados em texto JSON
+        contexto_texto = json.dumps(
+            contexto,
+            ensure_ascii=False
+        )
+
+        # Enviar pergunta e dados para o Gemini
+        resposta = perguntar_ao_gemini(
+            pergunta,
+            contexto_texto
+        )
+
+        return JsonResponse({
+            'resposta': resposta
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            'erro': str(e)
+        }, status=502)
+
+
+    lista = Movimentacao.objects.select_related('produto')
+
+    return JsonResponse(
+        [mov_json(m) for m in lista],
+        safe=False
+    )
+
+# FUNÇÃO DO ASSISTENTE DE IA
+@csrf_exempt
+def assistente_ia(request):
+
+    if request.method != 'POST':
+        return JsonResponse(
+            {'erro': 'Método não permitido.'},
+            status=405
+        )
+
+    dados = corpo(request)
+    pergunta = dados.get('pergunta', '').strip()
+
+    if not pergunta:
+        return JsonResponse(
+            {'erro': 'Digite uma pergunta.'},
+            status=400
+        )
+
+    try:
+        # Buscar todos os produtos cadastrados
+        produtos = Produto.objects.all().order_by('nome')
+
+        # Buscar as últimas 10 movimentações
+        movimentacoes_recentes = (
+            Movimentacao.objects
+            .select_related('produto')
+            .order_by('-criada_em')[:10]
+        )
+
+        # Organizar os dados dos produtos
+        lista_produtos = []
+
+        for p in produtos:
+            lista_produtos.append({
+                'nome': p.nome,
+                'sku': p.sku,
+                'saldo': p.saldo,
+                'estoque_minimo': p.estoque_minimo,
+                'situacao': (
+                    'Sem estoque' if p.saldo <= 0
+                    else 'Estoque baixo' if p.baixo
+                    else 'Estoque normal'
+                )
+            })
+
+        # Organizar as movimentações
+        lista_movimentacoes = []
+
+        for m in movimentacoes_recentes:
+            lista_movimentacoes.append({
+                'produto': m.produto.nome,
+                'sku': m.produto.sku,
+                'tipo': m.tipo,
+                'quantidade': m.quantidade,
+                'data': m.criada_em.strftime('%d/%m/%Y %H:%M')
+            })
+
+        # Montar o contexto com informações reais
+        contexto = {
+            'resumo': {
+                'total_produtos': produtos.count(),
+
+                'total_unidades': (
+                    produtos.aggregate(t=Sum('saldo'))['t'] or 0
+                ),
+
+                'produtos_com_estoque_baixo': (
+                    produtos.filter(
+                        saldo__lte=F('estoque_minimo')
+                    ).count()
+                ),
+
+                'total_entradas': Movimentacao.objects.filter(
+                    tipo='entrada'
+                ).count(),
+
+                'total_saidas': Movimentacao.objects.filter(
+                    tipo='saida'
+                ).count()
+            },
+
+            'produtos': lista_produtos,
+
+            'ultimas_movimentacoes': lista_movimentacoes
+        }
+
+        # Transformar os dados em texto JSON
+        contexto_texto = json.dumps(
+            contexto,
+            ensure_ascii=False
+        )
+
+        # Enviar pergunta e dados para o Gemini
+        resposta = perguntar_ao_gemini(
+            pergunta,
+            contexto_texto
+        )
+
+        return JsonResponse({
+            'resposta': resposta
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            'erro': str(e)
+        }, status=502)
