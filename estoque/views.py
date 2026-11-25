@@ -130,34 +130,41 @@ def produto_detalhe(request, pk):
 
 
 # EXCLUIR MOVIMENTAÇÃO (desfaz o efeito no saldo do produto)
+# EXCLUIR MOVIMENTAÇÃO (desfaz o efeito no saldo do produto)
 @csrf_exempt
 def movimentacao_detalhe(request, pk):
     if request.method != 'DELETE':
         return JsonResponse({'erro': 'Método não permitido.'}, status=405)
 
-    with transaction.atomic():
-        try:
-            mov = Movimentacao.objects.select_related('produto').get(pk=pk)
-        except Movimentacao.DoesNotExist:
-            return JsonResponse({'erro': 'Movimentação não encontrada.'}, status=404)
+    try:
+        with transaction.atomic():
+            try:
+                mov = Movimentacao.objects.select_related('produto').get(pk=pk)
+            except Movimentacao.DoesNotExist:
+                return JsonResponse({'erro': 'Movimentação não encontrada.'}, status=404)
 
-        produto = mov.produto
-        novo_saldo = produto.saldo + (
-            -mov.quantidade if mov.tipo == 'entrada' else mov.quantidade
-        )
-
-        if novo_saldo < 0:
-            return JsonResponse(
-                {'erro': f'Não dá pra excluir: o saldo de {produto.nome} ficaria negativo ({novo_saldo}).'},
-                status=400
+            produto = mov.produto
+            novo_saldo = produto.saldo + (
+                -mov.quantidade if mov.tipo == 'entrada' else mov.quantidade
             )
 
-        produto.saldo = novo_saldo
-        produto.save()
-        mov.delete()
+            if novo_saldo < 0:
+                return JsonResponse(
+                    {'erro': f'Não dá pra excluir: o saldo de {produto.nome} ficaria negativo ({novo_saldo}).'},
+                    status=400
+                )
 
-    return JsonResponse({'ok': True})
+            produto.saldo = novo_saldo
+            produto.save()
+            mov.delete()
 
+        return JsonResponse({'ok': True})
+
+    except Exception as e:
+        return JsonResponse(
+            {'erro': f'{type(e).__name__}: {e}'},
+            status=500
+        )
 
 # FUNÇÃO DO ASSISTENTE DE IA
 @csrf_exempt
