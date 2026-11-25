@@ -10,6 +10,13 @@ export default function Movimentacoes() {
     api.get('/movimentacoes/').then(setLista)
   }, [])
 
+  const excluir = (m) => {
+    if (!window.confirm(`Excluir ${m.tipo === 'entrada' ? 'a entrada' : 'a saída'} de ${m.quantidade} x ${m.produto}? O saldo do produto será corrigido.`)) return
+    api.delete(`/movimentacoes/${m.id}/`)
+      .then(() => setLista((l) => l.filter((x) => x.id !== m.id)))
+      .catch((e) => window.alert(e.erro || 'Não foi possível excluir.'))
+  }
+
   return (
     <>
       <div className="page-header">
@@ -27,7 +34,7 @@ export default function Movimentacoes() {
         ) : (
           <table className="tabela">
             <thead>
-              <tr><th>Data</th><th>Produto</th><th>Tipo</th><th className="dir">Quantidade</th></tr>
+              <tr><th>Data</th><th>Produto</th><th>Tipo</th><th className="dir">Quantidade</th><th></th></tr>
             </thead>
             <tbody>
               {lista.map((m) => (
@@ -36,9 +43,10 @@ export default function Movimentacoes() {
                   <td><strong>{m.produto}</strong> <span className="muted pequeno">{m.sku}</span></td>
                   <td><Badge tipo={m.tipo} /></td>
                   <td className="dir">{m.quantidade}</td>
+                  <td className="acoes-linha"><button className="btn mini" onClick={() => excluir(m)}>Excluir</button></td>
                 </tr>
               ))}
-              {lista.length === 0 && <tr><td colSpan="4" className="vazio">Nenhuma movimentação ainda.</td></tr>}
+              {lista.length === 0 && <tr><td colSpan="5" className="vazio">Nenhuma movimentação ainda.</td></tr>}
             </tbody>
           </table>
         )}

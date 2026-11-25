@@ -10,6 +10,13 @@ export default function Produtos() {
     api.get('/produtos/').then(setLista)
   }, [])
 
+  const excluir = (p) => {
+    if (!window.confirm(`Excluir o produto "${p.nome}"?`)) return
+    api.delete(`/produtos/${p.id}/`)
+      .then(() => setLista((l) => l.filter((x) => x.id !== p.id)))
+      .catch((e) => window.alert(e.erro || 'Não foi possível excluir.'))
+  }
+
   return (
     <>
       <div className="page-header">
@@ -27,7 +34,7 @@ export default function Produtos() {
         ) : (
           <table className="tabela">
             <thead>
-              <tr><th>Produto</th><th>SKU</th><th className="dir">Saldo</th><th className="dir">Mínimo</th><th>Status</th></tr>
+              <tr><th>Produto</th><th>SKU</th><th className="dir">Saldo</th><th className="dir">Mínimo</th><th>Status</th><th></th></tr>
             </thead>
             <tbody>
               {lista.map((p) => (
@@ -37,9 +44,10 @@ export default function Produtos() {
                   <td className="dir">{p.saldo}</td>
                   <td className="dir muted">{p.estoque_minimo}</td>
                   <td><Badge tipo={p.status} /></td>
+                  <td className="acoes-linha"><button className="btn mini" onClick={() => excluir(p)}>Excluir</button></td>
                 </tr>
               ))}
-              {lista.length === 0 && <tr><td colSpan="5" className="vazio">Nenhum produto ainda.</td></tr>}
+              {lista.length === 0 && <tr><td colSpan="6" className="vazio">Nenhum produto ainda.</td></tr>}
             </tbody>
           </table>
         )}

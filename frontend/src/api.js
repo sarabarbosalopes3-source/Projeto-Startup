@@ -13,4 +13,5 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(corpo),
     }),
+  delete: (url) => chamar(url, { method: 'DELETE' }),
 }
